@@ -1,363 +1,407 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Users,
-  Building,
-  DollarSign,
+  TrendingUp,
   Calendar,
+  DollarSign,
   Phone,
   Mail,
-  MapPin,
-  Plus,
-  CheckSquare,
   Clock,
-  AlertTriangle,
+  CheckCircle,
+  Building,
+  Activity,
 } from "lucide-react"
-import { useTask } from "@/contexts/task-context"
-import { TASK_TYPE_LABELS, TASK_PRIORITY_LABELS } from "@/lib/types"
-import Link from "next/link"
+import type { Client, Task } from "@/lib/types"
+import { useAuth } from "@/contexts/auth-context"
+
+// Mock data
+const mockStats = {
+  totalClients: 156,
+  activeClients: 89, // Clientes em andamento no pipeline
+  totalRevenue: 2450000,
+  monthlyRevenue: 850000,
+  conversionRate: 23.5,
+}
+
+const mockRecentClients: Client[] = [
+  {
+    id: "1",
+    full_name: "João Silva",
+    phone: "(11) 99999-9999",
+    email: "joao@email.com",
+    funnel_status: "Visitado",
+    created_at: "2024-01-20T00:00:00Z",
+    updated_at: "2024-01-20T00:00:00Z",
+    user_id: "1",
+    property_title: "Apartamento 3 quartos Vila Madalena",
+    assigned_user: {
+      id: "1",
+      name: "Ana Oliveira",
+      email: "ana@email.com",
+      role: "corretor",
+      created_at: "2024-01-01T00:00:00Z",
+    },
+  },
+  {
+    id: "2",
+    full_name: "Maria Santos",
+    phone: "(11) 88888-8888",
+    email: "maria@email.com",
+    funnel_status: "Proposta",
+    created_at: "2024-01-19T00:00:00Z",
+    updated_at: "2024-01-19T00:00:00Z",
+    user_id: "2",
+    property_title: "Casa 4 quartos Jardins",
+    assigned_user: {
+      id: "2",
+      name: "Carlos Ferreira",
+      email: "carlos@email.com",
+      role: "corretor",
+      created_at: "2024-01-01T00:00:00Z",
+    },
+  },
+]
+
+const mockUpcomingTasks: Task[] = [
+  {
+    id: "1",
+    title: "Ligar para João Silva",
+    description: "Agendar segunda visita",
+    due_date: "2024-01-22",
+    due_time: "09:00",
+    status: "pending",
+    priority: "high",
+    type: "call",
+    client_id: "1",
+    client_name: "João Silva",
+    user_id: "1",
+    created_at: "2024-01-20T00:00:00Z",
+    updated_at: "2024-01-20T00:00:00Z",
+  },
+  {
+    id: "2",
+    title: "Visita com Maria Santos",
+    description: "Mostrar casa nos Jardins",
+    due_date: "2024-01-22",
+    due_time: "14:00",
+    status: "pending",
+    priority: "medium",
+    type: "visit",
+    client_id: "2",
+    client_name: "Maria Santos",
+    user_id: "2",
+    created_at: "2024-01-20T00:00:00Z",
+    updated_at: "2024-01-20T00:00:00Z",
+  },
+]
 
 export default function DashboardPage() {
-  const { getTodayTasks, getOverdueTasks, completeTask } = useTask()
-  const todayTasks = getTodayTasks()
-  const overdueTasks = getOverdueTasks()
+  const { user } = useAuth()
+  const [stats, setStats] = useState(mockStats)
+  const [recentClients, setRecentClients] = useState<Client[]>([])
+  const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Estados para os dados dinâmicos dos cards
-  const [totalClients, setTotalClients] = useState(0)
-  const [activeProperties, setActiveProperties] = useState(0)
-  const [monthlySales, setMonthlySales] = useState(0)
-
-  // Hook para buscar dados quando o componente for montado
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        // TODO: Chamar API para buscar total de clientes
-        // const clientsResponse = await fetch('/api/clients/count');
-        // const clientsData = await clientsResponse.json();
-        // setTotalClients(clientsData.total);
+    // Simular carregamento dos dados
+    setTimeout(() => {
+      setRecentClients(mockRecentClients)
+      setUpcomingTasks(mockUpcomingTasks)
+      setLoading(false)
+    }, 1000)
 
-        // TODO: Chamar API para buscar imóveis ativos
-        // const propertiesResponse = await fetch('/api/properties/active-count');
-        // const propertiesData = await propertiesResponse.json();
-        // setActiveProperties(propertiesData.total);
+    // TODO: Implementar chamada real para API
+    // fetch('/api/dashboard/stats')
+    //   .then(res => res.json())
+    //   .then(data => setStats(data));
 
-        // TODO: Chamar API para buscar vendas do mês
-        // const salesResponse = await fetch('/api/sales/monthly');
-        // const salesData = await salesResponse.json();
-        // setMonthlySales(salesData.total);
-
-        // Dados temporários para demonstração
-        setTotalClients(1234)
-        setActiveProperties(856)
-        setMonthlySales(2400000)
-      } catch (error) {
-        console.error("Erro ao buscar dados do dashboard:", error)
-      }
-    }
-
-    fetchDashboardData()
+    // fetch('/api/clients/count?status=em_andamento')
+    //   .then(res => res.json())
+    //   .then(data => setStats(prev => ({ ...prev, activeClients: data.count })));
   }, [])
 
-  // Função para formatar valores monetários
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `R$ ${(value / 1000000).toFixed(1)}M`
-    } else if (value >= 1000) {
-      return `R$ ${(value / 1000).toFixed(0)}K`
-    }
-    return `R$ ${value.toLocaleString("pt-BR")}`
-  }
-
-  const stats = [
-    {
-      title: "Total de Clientes",
-      value: totalClients.toLocaleString("pt-BR"),
-      change: "+12%",
-      icon: Users,
-      color: "text-blue-600",
-    },
-    {
-      title: "Imóveis Ativos",
-      value: activeProperties.toLocaleString("pt-BR"),
-      change: "+8%",
-      icon: Building,
-      color: "text-green-600",
-    },
-    {
-      title: "Vendas do Mês",
-      value: formatCurrency(monthlySales),
-      change: "+23%",
-      icon: DollarSign,
-      color: "text-secondary-custom",
-    },
-  ]
-
-  const recentLeads = [
-    {
-      id: 1,
-      name: "Maria Silva",
-      email: "maria@email.com",
-      phone: "(11) 99999-9999",
-      interest: "Apartamento 3 quartos",
-      status: "Novo",
-      date: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "João Santos",
-      email: "joao@email.com",
-      phone: "(11) 88888-8888",
-      interest: "Casa com piscina",
-      status: "Contato",
-      date: "2024-01-14",
-    },
-    {
-      id: 3,
-      name: "Ana Costa",
-      email: "ana@email.com",
-      phone: "(11) 77777-7777",
-      interest: "Cobertura duplex",
-      status: "Proposta",
-      date: "2024-01-13",
-    },
-  ]
-
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Novo":
-        return "bg-blue-100 text-blue-800"
-      case "Contato":
-        return "bg-yellow-100 text-yellow-800"
-      case "Proposta":
-        return "bg-green-100 text-green-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+    const colors = {
+      Contato: "bg-gray-100 text-gray-800",
+      Diagnóstico: "bg-blue-100 text-blue-800",
+      Agendado: "bg-yellow-100 text-yellow-800",
+      Visitado: "bg-orange-100 text-orange-800",
+      Proposta: "bg-purple-100 text-purple-800",
+      Contrato: "bg-green-100 text-green-800",
     }
-  }
-
-  const getTaskIcon = (type: string) => {
-    switch (type) {
-      case "visit":
-        return <MapPin className="h-4 w-4 text-secondary-custom" />
-      case "call":
-        return <Phone className="h-4 w-4 text-secondary-custom" />
-      case "follow_up":
-        return <Mail className="h-4 w-4 text-secondary-custom" />
-      case "meeting":
-        return <Users className="h-4 w-4 text-secondary-custom" />
-      default:
-        return <CheckSquare className="h-4 w-4 text-secondary-custom" />
-    }
+    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800"
   }
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800"
-      case "medium":
-        return "bg-yellow-100 text-yellow-800"
-      case "low":
-        return "bg-green-100 text-green-800"
+    const colors = {
+      high: "text-red-600",
+      medium: "text-yellow-600",
+      low: "text-green-600",
+    }
+    return colors[priority as keyof typeof colors] || "text-gray-600"
+  }
+
+  const getTaskTypeIcon = (type: string) => {
+    switch (type) {
+      case "call":
+        return <Phone className="h-4 w-4" />
+      case "visit":
+        return <Building className="h-4 w-4" />
+      case "follow_up":
+        return <Mail className="h-4 w-4" />
       default:
-        return "bg-gray-100 text-gray-800"
+        return <Calendar className="h-4 w-4" />
     }
   }
 
-  const handleCompleteTask = async (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    await completeTask(taskId)
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value)
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="h-96 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-primary-custom">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral do seu negócio imobiliário</p>
-        </div>
-        <Button className="bg-secondary-custom hover:bg-secondary-custom/90 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Lead
-        </Button>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Olá, {user?.name || "Usuário"}! 👋</h1>
+        <p className="text-gray-600">Aqui está um resumo das suas atividades e performance</p>
       </div>
 
-      {/* Stats Cards - Agora com apenas 3 cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.title} className="bg-tertiary-custom text-white border-tertiary-custom">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-white">{stat.title}</CardTitle>
-                <Icon className={`h-4 w-4 text-secondary-custom`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <p className="text-xs text-gray-300">
-                  <span className="text-secondary-custom">{stat.change}</span> em relação ao mês anterior
-                </p>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Leads */}
-        <Card className="bg-white border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-primary-custom">Leads Recentes</CardTitle>
-            <CardDescription>Novos interessados nos últimos dias</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentLeads.map((lead) => (
-                <div key={lead.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-primary-custom">{lead.name}</h4>
-                      <Badge className={getStatusColor(lead.status)}>{lead.status}</Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {lead.email}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        {lead.phone}
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Interesse: {lead.interest}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-secondary-custom text-secondary-custom hover:bg-secondary-custom hover:text-white bg-transparent"
-                  >
-                    Ver detalhes
-                  </Button>
-                </div>
-              ))}
+      {/* Métricas Principais - Card de Meta removido */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total de Clientes</p>
+                <p className="text-2xl font-bold">{stats.totalClients}</p>
+              </div>
+              <Users className="h-8 w-8 text-primary" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Today's Tasks */}
-        <Card className="bg-white border-gray-200">
-          <CardHeader>
+        <Card>
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-primary-custom flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Agenda de Hoje
-                </CardTitle>
-                <CardDescription>Suas tarefas para hoje</CardDescription>
+                <p className="text-sm text-gray-600">Clientes Ativos</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.activeClients}</p>
+                <p className="text-xs text-gray-500">Clientes em andamento no pipeline</p>
               </div>
-              <Link href="/tasks">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-secondary-custom text-secondary-custom hover:bg-secondary-custom hover:text-white bg-transparent"
-                >
-                  Ver todas
-                </Button>
-              </Link>
+              <Activity className="h-8 w-8 text-blue-600" />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Receita Mensal</p>
+                <p className="text-2xl font-bold text-emerald-600">{formatCurrency(stats.monthlyRevenue)}</p>
+                <p className="text-xs text-gray-500">Taxa de conversão: {stats.conversionRate}%</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-emerald-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Clientes Recentes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Clientes Recentes
+            </CardTitle>
+            <CardDescription>Últimos clientes adicionados ao sistema</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Tarefas atrasadas */}
-              {overdueTasks.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-red-600">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="text-sm font-medium">Tarefas Atrasadas ({overdueTasks.length})</span>
-                  </div>
-                  {overdueTasks.slice(0, 2).map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-4 p-3 border border-red-200 bg-red-50 rounded-lg"
-                    >
-                      <div className="flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
-                        {getTaskIcon(task.type)}
+              {recentClients.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">Nenhum cliente recente encontrado.</p>
+              ) : (
+                recentClients.map((client) => (
+                  <div
+                    key={client.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-white">
+                          {client.full_name.charAt(0).toUpperCase()}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-red-900 truncate">{task.title}</h4>
-                        <p className="text-sm text-red-700">{task.client_name && `Cliente: ${task.client_name}`}</p>
+                      <div>
+                        <p className="font-medium text-gray-900">{client.full_name}</p>
+                        <p className="text-sm text-gray-600">{client.property_title}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge className={getPriorityColor(task.priority)} variant="outline">
-                            {TASK_PRIORITY_LABELS[task.priority]}
+                          <Badge className={getStatusColor(client.funnel_status)} variant="secondary">
+                            {client.funnel_status}
                           </Badge>
-                          <span className="text-xs text-red-600">Atrasada - {task.due_time}</span>
+                          {client.assigned_user && (
+                            <span className="text-xs text-gray-500">{client.assigned_user.name}</span>
+                          )}
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => handleCompleteTask(task.id, e)}
-                        className="border-green-500 text-green-600 hover:bg-green-500 hover:text-white"
-                      >
-                        <CheckSquare className="h-4 w-4" />
-                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Tarefas de hoje */}
-              {todayTasks.length === 0 && overdueTasks.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <CheckSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Nenhuma tarefa para hoje!</p>
-                  <p className="text-sm">Você está em dia com suas atividades.</p>
-                </div>
-              ) : (
-                todayTasks.map((task) => (
-                  <div key={task.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center justify-center w-10 h-10 bg-secondary-custom/10 rounded-full">
-                      {getTaskIcon(task.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-primary-custom truncate">{task.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {task.client_name && `Cliente: ${task.client_name}`}
-                        {task.property_title && ` - ${task.property_title}`}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={getPriorityColor(task.priority)} variant="outline">
-                          {TASK_PRIORITY_LABELS[task.priority]}
-                        </Badge>
-                        <span className="text-xs text-gray-500">{TASK_TYPE_LABELS[task.type]}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 text-secondary-custom">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-medium">{task.due_time}</span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => handleCompleteTask(task.id, e)}
-                        className="border-green-500 text-green-600 hover:bg-green-500 hover:text-white"
-                      >
-                        <CheckSquare className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => (window.location.href = `/client/${client.id}`)}>
+                      Ver Detalhes
+                    </Button>
                   </div>
                 ))
               )}
             </div>
+            {recentClients.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  onClick={() => (window.location.href = "/pipeline")}
+                >
+                  Ver Todos os Clientes
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Próximas Tarefas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Próximas Tarefas
+            </CardTitle>
+            <CardDescription>Tarefas agendadas para os próximos dias</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {upcomingTasks.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">Nenhuma tarefa agendada.</p>
+              ) : (
+                upcomingTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
+                      {getTaskTypeIcon(task.type)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900">{task.title}</p>
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            task.priority === "high"
+                              ? "bg-red-500"
+                              : task.priority === "medium"
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                          }`}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600">{task.client_name}</p>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {new Date(task.due_date).toLocaleDateString("pt-BR")} às {task.due_time}
+                        </span>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <CheckCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+            {upcomingTasks.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full bg-transparent"
+                  onClick={() => (window.location.href = "/tasks")}
+                >
+                  Ver Todas as Tarefas
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Ações Rápidas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ações Rápidas</CardTitle>
+          <CardDescription>Acesse rapidamente as funcionalidades mais utilizadas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              className="h-20 flex-col gap-2 bg-transparent"
+              onClick={() => (window.location.href = "/pipeline")}
+            >
+              <Users className="h-6 w-6" />
+              <span>Novo Cliente</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex-col gap-2 bg-transparent"
+              onClick={() => (window.location.href = "/properties")}
+            >
+              <Building className="h-6 w-6" />
+              <span>Novo Imóvel</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex-col gap-2 bg-transparent"
+              onClick={() => (window.location.href = "/tasks")}
+            >
+              <Calendar className="h-6 w-6" />
+              <span>Nova Tarefa</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-20 flex-col gap-2 bg-transparent"
+              onClick={() => (window.location.href = "/pipeline")}
+            >
+              <TrendingUp className="h-6 w-6" />
+              <span>Ver Pipeline</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
