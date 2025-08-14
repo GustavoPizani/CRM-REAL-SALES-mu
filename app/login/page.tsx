@@ -101,11 +101,7 @@ export default function LoginPage() {
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-muted-foreground bg-gray-50 p-4 rounded">
-            <p className="font-medium text-primary-custom mb-2">Credenciais de teste:</p>
-            <p>Email: admin@realsales.com</p>
-            <p>Senha: admin123</p>
-          </div>
+          
         </CardContent>
       </Card>
     </div>

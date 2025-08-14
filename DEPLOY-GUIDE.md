@@ -1,214 +1,225 @@
-# 🚀 Guia Completo de Deploy - Real Sales CRM
+# 🚀 Guia de Deploy - Real Sales CRM
 
-## 📋 Pré-requisitos
+## Pré-requisitos
 
 - Conta no GitHub
 - Conta na Vercel
-- Banco de dados Neon (já configurado)
+- Banco de dados Neon (PostgreSQL)
 
-## 🔧 Passo a Passo para Deploy
+## 1. Preparar Repositório GitHub
 
-### 1. Preparar o Repositório GitHub
-
+### 1.1 Criar Repositório
 \`\`\`bash
-# 1. Inicializar repositório Git (se ainda não foi feito)
+# Inicializar Git
 git init
 
-# 2. Adicionar todos os arquivos
+# Adicionar arquivos
 git add .
 
-# 3. Fazer commit inicial
+# Commit inicial
 git commit -m "feat: sistema CRM completo com gestão de propriedades"
 
-# 4. Adicionar repositório remoto (substitua pela sua URL)
+# Criar repositório no GitHub e adicionar remote
 git remote add origin https://github.com/SEU_USUARIO/real-sales-crm.git
 
-# 5. Fazer push para o GitHub
+# Push para GitHub
 git push -u origin main
 \`\`\`
 
-### 2. Configurar Variáveis de Ambiente
+### 1.2 Resolver Problema do Sharp
+Se aparecer o erro do sharp durante o build:
 
-Crie um arquivo `.env.local` na raiz do projeto com:
+\`\`\`bash
+# Instalar dependências
+npm install
 
-\`\`\`env
-# Banco de dados Neon
-DATABASE_URL="postgresql://neondb_owner:npg_In8ZcBvgX3eD@ep-steep-dust-ad9sqscl-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require"
-
-# Autenticação
-JWT_SECRET="b7bf7faa191b055bed080d8438a5e5e5"
-NEXTAUTH_URL="https://SEU_DOMINIO.vercel.app"
-NEXTAUTH_SECRET="minha-chave-nextauth-super-secreta-123"
-
-# Ambiente
-NODE_ENV="production"
+# Aprovar builds do sharp
+npm run approve-builds
 \`\`\`
 
-### 3. Deploy na Vercel
+## 2. Configurar Banco de Dados (Neon)
 
-#### Opção A: Via Dashboard Vercel
+### 2.1 Criar Projeto no Neon
+1. Acesse [neon.tech](https://neon.tech)
+2. Crie uma nova conta ou faça login
+3. Clique em "Create Project"
+4. Escolha região (preferencialmente São Paulo)
+5. Copie a connection string
+
+### 2.2 Executar Scripts SQL
+Execute os scripts na seguinte ordem no console SQL do Neon:
+
+1. **`scripts/001-create-database-schema.sql`**
+   - Cria todas as tabelas básicas
+   - Define relacionamentos e índices
+
+2. **`scripts/002-seed-initial-data.sql`**
+   - Insere dados iniciais de exemplo
+   - Cria usuários de teste
+
+3. **`scripts/003-add-property-changes-table.sql`**
+   - Adiciona sistema de controle de alterações
+   - Cria tabela de histórico
+
+4. **`scripts/004-update-seed-data.sql`**
+   - Insere seu usuário admin (Gustavo Pizani)
+   - Adiciona dados de exemplo atualizados
+
+## 3. Deploy na Vercel
+
+### 3.1 Conectar Repositório
 1. Acesse [vercel.com](https://vercel.com)
 2. Clique em "New Project"
 3. Conecte sua conta GitHub
 4. Selecione o repositório `real-sales-crm`
-5. Configure as variáveis de ambiente:
-   - `DATABASE_URL`
-   - `JWT_SECRET`
-   - `NEXTAUTH_URL`
-   - `NEXTAUTH_SECRET`
-   - `NODE_ENV`
-6. Clique em "Deploy"
+5. Clique em "Import"
 
-#### Opção B: Via CLI Vercel
-\`\`\`bash
-# 1. Instalar Vercel CLI
-npm i -g vercel
+### 3.2 Configurar Variáveis de Ambiente
+Na seção "Environment Variables", adicione:
 
-# 2. Fazer login
-vercel login
+\`\`\`env
+# Banco de Dados
+DATABASE_URL=postgresql://username:password@host/database?sslmode=require
 
-# 3. Deploy
-vercel
+# Autenticação
+JWT_SECRET=b7bf7faa191b055bed080d8438a5e5e5
+NEXTAUTH_URL=https://SEU_DOMINIO.vercel.app
+NEXTAUTH_SECRET=minha-chave-nextauth-super-secreta-123
 
-# 4. Configurar variáveis de ambiente
-vercel env add DATABASE_URL
-vercel env add JWT_SECRET
-vercel env add NEXTAUTH_URL
-vercel env add NEXTAUTH_SECRET
-vercel env add NODE_ENV
+# Ambiente
+NODE_ENV=production
 \`\`\`
 
-### 4. Executar Scripts do Banco de Dados
+### 3.3 Configurações de Build
+- **Framework Preset:** Next.js
+- **Build Command:** `npm run build`
+- **Output Directory:** `.next`
+- **Install Command:** `npm install`
 
-Após o deploy, execute os scripts na seguinte ordem:
+### 3.4 Deploy
+1. Clique em "Deploy"
+2. Aguarde o build completar (2-3 minutos)
+3. Acesse o link gerado
 
-\`\`\`bash
-# 1. Criar schema do banco
-# Execute o conteúdo de scripts/001-create-database-schema.sql no console do Neon
+## 4. Primeiro Acesso
 
-# 2. Inserir dados iniciais
-# Execute o conteúdo de scripts/002-seed-initial-data.sql no console do Neon
-
-# 3. Adicionar tabela de alterações
-# Execute o conteúdo de scripts/003-add-property-changes-table.sql no console do Neon
-
-# 4. Atualizar dados com seu usuário
-# Execute o conteúdo de scripts/004-update-seed-data.sql no console do Neon
-\`\`\`
-
-### 5. Primeiro Acesso
-
-**Credenciais de Acesso:**
+### 4.1 Credenciais de Admin
 - **Email:** `pizani@realsales.com.br`
 - **Senha:** `RealSales2024!`
 
 ⚠️ **IMPORTANTE:** Altere a senha após o primeiro login!
 
-### 6. Verificações Pós-Deploy
+### 4.2 Verificar Funcionalidades
+Teste as seguintes funcionalidades:
 
-1. **Teste de Login:**
-   - Acesse sua URL da Vercel
-   - Faça login com as credenciais acima
-   - Verifique se o dashboard carrega corretamente
+- ✅ Login com suas credenciais
+- ✅ Dashboard com métricas
+- ✅ Pipeline de vendas (drag & drop)
+- ✅ Cadastro de novo imóvel
+- ✅ Upload de imagens
+- ✅ Auto-save
+- ✅ Sistema de aprovação
 
-2. **Teste de Funcionalidades:**
-   - Criar novo imóvel
-   - Upload de imagens
-   - Auto-save
-   - Sistema de aprovações
+## 5. Configurações Pós-Deploy
 
-3. **Verificar Banco de Dados:**
-   - Acesse o console do Neon
-   - Verifique se todas as tabelas foram criadas
-   - Confirme se os dados iniciais estão presentes
-
-## 🔧 Configurações Adicionais
-
-### Domínio Personalizado (Opcional)
-1. No dashboard da Vercel, vá em "Settings" > "Domains"
+### 5.1 Domínio Personalizado (Opcional)
+1. Na Vercel, vá em "Settings" > "Domains"
 2. Adicione seu domínio personalizado
-3. Configure os DNS conforme instruções da Vercel
-4. Atualize a variável `NEXTAUTH_URL`
+3. Configure DNS conforme instruções
 
-### Monitoramento
-1. Configure alertas na Vercel para erros
-2. Monitore uso do banco Neon
-3. Configure backup automático (recomendado)
+### 5.2 Monitoramento
+1. Ative Vercel Analytics
+2. Configure alertas de erro
+3. Monitore performance
 
-### Segurança
-1. **Altere todas as chaves secretas** em produção
-2. Configure CORS adequadamente
-3. Implemente rate limiting se necessário
-4. Configure SSL/HTTPS (automático na Vercel)
+### 5.3 Backup
+1. Configure backup automático do Neon
+2. Exporte dados regularmente
+3. Documente procedimentos
 
-## 📊 Métricas e Monitoramento
+## 6. Solução de Problemas
 
-### Vercel Analytics
-- Ative o Vercel Analytics no dashboard
-- Monitore performance e uso
-
-### Banco de Dados
-- Monitore conexões no Neon
-- Configure alertas de uso
-- Faça backups regulares
-
-## 🚨 Troubleshooting
-
-### Erro de Conexão com Banco
+### 6.1 Erro de Build
 \`\`\`bash
-# Verifique se a DATABASE_URL está correta
-# Teste a conexão no console do Neon
+# Limpar cache
+npm run build
+
+# Verificar dependências
+npm audit fix
 \`\`\`
 
-### Erro de Build
-\`\`\`bash
-# Verifique os logs no dashboard da Vercel
-# Confirme se todas as dependências estão no package.json
-\`\`\`
+### 6.2 Erro de Banco
+- Verificar connection string
+- Confirmar execução dos scripts SQL
+- Testar conexão no Neon console
 
-### Erro de Autenticação
-\`\`\`bash
-# Verifique se NEXTAUTH_URL está correto
-# Confirme se JWT_SECRET está configurado
-\`\`\`
+### 6.3 Erro de Autenticação
+- Verificar variáveis de ambiente
+- Confirmar NEXTAUTH_URL
+- Testar credenciais
 
-## 📝 Comandos Úteis
+## 7. Próximos Passos
 
-\`\`\`bash
-# Ver logs em tempo real
-vercel logs
+### 7.1 Configuração da Equipe
+1. Adicionar usuários via interface
+2. Definir permissões por cargo
+3. Treinar equipe no sistema
 
-# Fazer redeploy
-vercel --prod
+### 7.2 Personalização
+1. Alterar logo e cores
+2. Configurar integrações
+3. Ajustar fluxos de trabalho
 
-# Ver informações do projeto
-vercel inspect
+### 7.3 Otimização
+1. Monitorar performance
+2. Otimizar queries
+3. Implementar cache
 
-# Configurar alias
-vercel alias
-\`\`\`
+## 8. Suporte
 
-## 🎯 Próximos Passos
+### 8.1 Documentação
+- [Next.js Docs](https://nextjs.org/docs)
+- [Vercel Docs](https://vercel.com/docs)
+- [Neon Docs](https://neon.tech/docs)
 
-Após o deploy bem-sucedido:
-
-1. **Configurar usuários:** Adicione outros usuários do sistema
-2. **Importar dados:** Se houver dados existentes para migrar
-3. **Treinar equipe:** Apresente o sistema para os usuários
-4. **Monitorar:** Acompanhe uso e performance
-5. **Backup:** Configure rotina de backup dos dados
-
-## 📞 Suporte
-
-Em caso de problemas:
-1. Verifique os logs da Vercel
-2. Consulte a documentação do Neon
-3. Verifique as variáveis de ambiente
-4. Teste localmente primeiro
+### 8.2 Logs e Debug
+- Vercel Functions logs
+- Browser DevTools
+- Neon query logs
 
 ---
 
-**✅ Sistema pronto para produção!**
+## ✅ Checklist de Deploy
+
+- [ ] Repositório GitHub criado
+- [ ] Scripts SQL executados
+- [ ] Variáveis de ambiente configuradas
+- [ ] Deploy na Vercel realizado
+- [ ] Primeiro login testado
+- [ ] Funcionalidades principais testadas
+- [ ] Equipe configurada
+- [ ] Backup configurado
+
+**🎉 Sistema pronto para uso em produção!**
 \`\`\`
 
 Agora vou atualizar o botão "Novo Imóvel" na página de listagem:
+
+```tsx file="app/properties/page.tsx"
+[v0-no-op-code-block-prefix]import Link from 'next/link';
+import { Button } from 'ui';
+import { Plus } from 'lucide-react';
+
+export default function PropertiesPage() {
+  return (
+    <div>
+      <Button asChild>
+        <Link href="/properties/new">
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Imóvel
+        </Link>
+      </Button>
+      {/* rest of code here */}
+    </div>
+  );
+}

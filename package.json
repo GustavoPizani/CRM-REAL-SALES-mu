@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "approve-builds": "pnpm approve-builds",
     "build": "next build",
     "dev": "next dev",
+    "postinstall": "pnpm approve-builds sharp",
     "lint": "next lint",
     "start": "next start"
   },
@@ -42,7 +44,8 @@
     "react-dom": "^18",
     "recharts": "^2.12.2",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "ui": "latest"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.5",
@@ -55,5 +58,10 @@
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "allowedDeprecatedVersions": {
+      "sharp": "*"
+    }
   }
 }

@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { sql } from "@/lib/db"
+import { neon } from "@neondatabase/serverless"
+
+const sql = neon(process.env.DATABASE_URL!)
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -17,16 +19,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json(changes)
   } catch (error) {
-    console.error("Erro ao buscar alterações:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("Error fetching property changes:", error)
+    return NextResponse.json({ error: "Failed to fetch changes" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { field, oldValue, newValue, userId } = await request.json()
+    const body = await request.json()
+    const { field, oldValue, newValue, userId } = body
 
-    const change = await sql`
+    // Insert change record
+    const [change] = await sql`
       INSERT INTO property_changes (
         property_id, user_id, field, old_value, new_value, status
       ) VALUES (
@@ -35,9 +39,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       RETURNING *
     `
 
-    return NextResponse.json(change[0])
+    return NextResponse.json(change)
   } catch (error) {
-    console.error("Erro ao registrar alteração:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("Error creating property change:", error)
+    return NextResponse.json({ error: "Failed to create change" }, { status: 500 })
   }
 }
