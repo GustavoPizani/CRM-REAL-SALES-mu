@@ -1,40 +1,64 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
-import { getUserFromToken } from "@/lib/auth"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const user = await getUserFromToken(request)
-    if (!user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
-    }
-
-    // Verificar se o usuário tem permissão para aprovar (admin ou gerente)
-    if (!["marketing_adm", "diretor", "gerente"].includes(user.role)) {
-      return NextResponse.json({ error: "Sem permissão para aprovar alterações" }, { status: 403 })
-    }
-
-    const { change_ids, action } = await request.json() // action: 'approve' ou 'reject'
+    const { changeId, action, userId } = await request.json()
 
     if (action === "approve") {
-      // Aplicar as alterações aprovadas
-      await sql`
-        UPDATE property_changes 
-        SET status = 'approved', approved_by = ${user.id}, approved_at = CURRENT_TIMESTAMP
-        WHERE id = ANY(${change_ids}) AND property_id = ${params.id}
+      // Busca a alteração
+      const change = await sql`
+        SELECT * FROM property_changes 
+        WHERE id = ${changeId} AND property_id = ${params.id}
       `
 
-      // Aqui você aplicaria as alterações na tabela properties
-      // Por simplicidade, vamos apenas marcar como aprovado
-    } else if (action === "reject") {
+      if (change.length === 0) {
+        return NextResponse.json({ error: "Alteração não encontrada" }, { status: 404 })
+      }
+
+      const changeData = change[0]
+
+      // Aplica a alteração na propriedade
+      if (changeData.field === "typologies") {
+        await sql`
+          UPDATE properties 
+          SET typologies = ${JSON.stringify(changeData.new_value)}
+          WHERE id = ${params.id}
+        `
+      } else if (changeData.field === "developer_name") {
+        await sql`
+          UPDATE properties 
+          SET developer_name = ${changeData.new_value}
+          WHERE id = ${params.id}
+        `
+      } else if (changeData.field === "partnership_manager") {
+        await sql`
+          UPDATE properties 
+          SET partnership_manager = ${changeData.new_value}
+          WHERE id = ${params.id}
+        `
+      } else {
+        // Para outros campos padrão
+        const updateQuery = `UPDATE properties SET ${changeData.field} = $1 WHERE id = $2`
+        await sql.unsafe(updateQuery, [changeData.new_value, params.id])
+      }
+
+      // Marca como aprovada
       await sql`
         UPDATE property_changes 
-        SET status = 'rejected', approved_by = ${user.id}, approved_at = CURRENT_TIMESTAMP
-        WHERE id = ANY(${change_ids}) AND property_id = ${params.id}
+        SET status = 'approved', approved_by = ${userId}
+        WHERE id = ${changeId}
+      `
+    } else if (action === "reject") {
+      // Marca como rejeitada
+      await sql`
+        UPDATE property_changes 
+        SET status = 'rejected', approved_by = ${userId}
+        WHERE id = ${changeId}
       `
     }
 
-    return NextResponse.json({ message: `Alterações ${action === "approve" ? "aprovadas" : "rejeitadas"} com sucesso` })
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Erro ao processar aprovação:", error)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })

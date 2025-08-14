@@ -5,34 +5,19 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  ArrowLeft,
-  Save,
-  Plus,
-  Trash2,
-  Upload,
-  X,
-  Building,
-  Home,
-  DollarSign,
-  Square,
-  Bed,
-  Bath,
-  Car,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  ImageIcon,
-} from "lucide-react"
-import type { PropertyTypology } from "@/lib/types"
+import { Clock, Upload, X, Save, Plus, Trash2 } from "lucide-react"
+
+interface Typology {
+  id: string
+  name: string
+  value: number
+  description: string
+}
 
 interface ChangeLog {
   id: string
@@ -45,165 +30,108 @@ interface ChangeLog {
 
 export default function NewPropertyPage() {
   const router = useRouter()
-  const [saving, setSaving] = useState(false)
-  const [autoSaving, setAutoSaving] = useState(false)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  const [changeLog, setChangeLog] = useState<ChangeLog[]>([])
 
   // Estados do formulário
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [address, setAddress] = useState("")
   const [type, setType] = useState("")
-  const [status, setStatus] = useState("Disponível")
-  const [features, setFeatures] = useState<string[]>([])
-  const [newFeature, setNewFeature] = useState("")
+  const [address, setAddress] = useState("")
+  const [bedrooms, setBedrooms] = useState("")
+  const [bathrooms, setBathrooms] = useState("")
+  const [area, setArea] = useState("")
+  const [status, setStatus] = useState("available")
   const [images, setImages] = useState<string[]>([])
-  const [uploadingImages, setUploadingImages] = useState(false)
-  const [typologies, setTypologies] = useState<PropertyTypology[]>([])
+  const [typologies, setTypologies] = useState<Typology[]>([])
   const [developerName, setDeveloperName] = useState("")
   const [partnershipManager, setPartnershipManager] = useState("")
-  const [developerPhone, setDeveloperPhone] = useState("")
-  const [developerEmail, setDeveloperEmail] = useState("")
+
+  // Estados de controle
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [changeLog, setChangeLog] = useState<ChangeLog[]>([])
+  const [saving, setSaving] = useState(false)
 
   // Auto-save com debounce
   const autoSave = useCallback(async () => {
-    if (!title.trim()) return // Não salva se não tem título
+    if (!title.trim()) return
 
     setAutoSaving(true)
 
-    try {
-      // Simular auto-save
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const savedData = {
-        title,
-        description,
-        address,
-        type,
-        status,
-        features,
-        images,
-        typologies,
-        developer: {
-          name: developerName,
-          partnership_manager: partnershipManager,
-          phone: developerPhone,
-          email: developerEmail,
-        },
-      }
-
-      // Salvar no localStorage como backup
-      localStorage.setItem("property-draft", JSON.stringify(savedData))
-      setLastSaved(new Date())
-
-      console.log("Auto-save realizado:", savedData)
-    } catch (error) {
-      console.error("Erro no auto-save:", error)
-    } finally {
-      setAutoSaving(false)
+    const draftData = {
+      title,
+      description,
+      type,
+      address,
+      bedrooms,
+      bathrooms,
+      area,
+      status,
+      images,
+      typologies,
+      developerName,
+      partnershipManager,
+      timestamp: new Date().toISOString(),
     }
+
+    // Salva no localStorage como backup
+    localStorage.setItem("property-draft-new", JSON.stringify(draftData))
+
+    // Simula salvamento no servidor
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    setAutoSaving(false)
+    setLastSaved(new Date())
   }, [
     title,
     description,
-    address,
     type,
+    address,
+    bedrooms,
+    bathrooms,
+    area,
     status,
-    features,
     images,
     typologies,
     developerName,
     partnershipManager,
-    developerPhone,
-    developerEmail,
   ])
 
-  // Debounce para auto-save
+  // Debounce do auto-save
   useEffect(() => {
     const timer = setTimeout(() => {
       autoSave()
-    }, 2000) // Auto-save após 2 segundos de inatividade
+    }, 2000)
 
     return () => clearTimeout(timer)
   }, [autoSave])
 
-  // Carregar rascunho salvo
+  // Carrega rascunho salvo
   useEffect(() => {
-    const savedDraft = localStorage.getItem("property-draft")
+    const savedDraft = localStorage.getItem("property-draft-new")
     if (savedDraft) {
       try {
-        const data = JSON.parse(savedDraft)
-        setTitle(data.title || "")
-        setDescription(data.description || "")
-        setAddress(data.address || "")
-        setType(data.type || "")
-        setStatus(data.status || "Disponível")
-        setFeatures(data.features || [])
-        setImages(data.images || [])
-        setTypologies(data.typologies || [])
-        setDeveloperName(data.developer?.name || "")
-        setPartnershipManager(data.developer?.partnership_manager || "")
-        setDeveloperPhone(data.developer?.phone || "")
-        setDeveloperEmail(data.developer?.email || "")
+        const draft = JSON.parse(savedDraft)
+        setTitle(draft.title || "")
+        setDescription(draft.description || "")
+        setType(draft.type || "")
+        setAddress(draft.address || "")
+        setBedrooms(draft.bedrooms || "")
+        setBathrooms(draft.bathrooms || "")
+        setArea(draft.area || "")
+        setStatus(draft.status || "available")
+        setImages(draft.images || [])
+        setTypologies(draft.typologies || [])
+        setDeveloperName(draft.developerName || "")
+        setPartnershipManager(draft.partnershipManager || "")
+        setLastSaved(new Date(draft.timestamp))
       } catch (error) {
         console.error("Erro ao carregar rascunho:", error)
       }
     }
   }, [])
 
-  // Função para registrar mudanças
-  const logChange = (field: string, oldValue: any, newValue: any) => {
-    const change: ChangeLog = {
-      id: Date.now().toString(),
-      field,
-      oldValue,
-      newValue,
-      timestamp: new Date().toISOString(),
-      user: "Usuário Atual", // Aqui viria do contexto de autenticação
-    }
-    setChangeLog((prev) => [change, ...prev].slice(0, 50)) // Manter apenas os últimos 50 logs
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-
-    try {
-      // Simular salvamento
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      const propertyData = {
-        title,
-        description,
-        address,
-        type,
-        status,
-        features,
-        images,
-        typologies,
-        developer: {
-          name: developerName,
-          partnership_manager: partnershipManager,
-          phone: developerPhone,
-          email: developerEmail,
-        },
-      }
-
-      console.log("Salvando novo imóvel:", propertyData)
-
-      // Limpar rascunho após salvar
-      localStorage.removeItem("property-draft")
-
-      // Simular ID do novo imóvel
-      const newPropertyId = Date.now().toString()
-
-      router.push(`/properties/${newPropertyId}`)
-    } catch (error) {
-      console.error("Erro ao salvar:", error)
-    } finally {
-      setSaving(false)
-    }
-  }
-
+  // Upload de imagens
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files) return
@@ -212,12 +140,9 @@ export default function NewPropertyPage() {
 
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
-        // Simular upload de imagem
+        // Simula upload - em produção, usar serviço real como Vercel Blob
         await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        // Criar URL temporária para preview
-        const imageUrl = URL.createObjectURL(file)
-        return imageUrl
+        return URL.createObjectURL(file)
       })
 
       const uploadedUrls = await Promise.all(uploadPromises)
@@ -231,90 +156,105 @@ export default function NewPropertyPage() {
     }
   }
 
-  const addFeature = () => {
-    if (newFeature.trim() && !features.includes(newFeature.trim())) {
-      const newFeatures = [...features, newFeature.trim()]
-      logChange("features", features, newFeatures)
-      setFeatures(newFeatures)
-      setNewFeature("")
-    }
-  }
-
-  const removeFeature = (feature: string) => {
-    const newFeatures = features.filter((f) => f !== feature)
-    logChange("features", features, newFeatures)
-    setFeatures(newFeatures)
-  }
-
-  const addTypology = () => {
-    const newTypology: PropertyTypology = {
-      id: Date.now().toString(),
-      name: "",
-      price: 0,
-      area: 0,
-      bedrooms: 0,
-      bathrooms: 0,
-      parking_spaces: 0,
-    }
-    const newTypologies = [...typologies, newTypology]
-    logChange("typologies", typologies, newTypologies)
-    setTypologies(newTypologies)
-  }
-
-  const updateTypology = (id: string, field: keyof PropertyTypology, value: any) => {
-    const oldTypologies = [...typologies]
-    const newTypologies = typologies.map((t) => (t.id === id ? { ...t, [field]: value } : t))
-    logChange(`typology.${field}`, oldTypologies, newTypologies)
-    setTypologies(newTypologies)
-  }
-
-  const removeTypology = (id: string) => {
-    const newTypologies = typologies.filter((t) => t.id !== id)
-    logChange("typologies", typologies, newTypologies)
-    setTypologies(newTypologies)
-  }
-
+  // Remove imagem
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index)
-    logChange("images", images, newImages)
     setImages(newImages)
+    logChange("images", images, newImages)
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value)
+  // Adiciona tipologia
+  const addTypology = () => {
+    const newTypology: Typology = {
+      id: Date.now().toString(),
+      name: "",
+      value: 0,
+      description: "",
+    }
+    setTypologies((prev) => [...prev, newTypology])
   }
 
-  const formatDateTime = (date: Date) => {
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date)
+  // Remove tipologia
+  const removeTypology = (id: string) => {
+    const newTypologies = typologies.filter((t) => t.id !== id)
+    setTypologies(newTypologies)
+    logChange("typologies", typologies, newTypologies)
+  }
+
+  // Atualiza tipologia
+  const updateTypology = (id: string, field: keyof Typology, value: any) => {
+    const newTypologies = typologies.map((t) => (t.id === id ? { ...t, [field]: value } : t))
+    setTypologies(newTypologies)
+    logChange(`typology.${field}`, typologies, newTypologies)
+  }
+
+  // Log de mudanças
+  const logChange = (field: string, oldValue: any, newValue: any) => {
+    const change: ChangeLog = {
+      id: Date.now().toString(),
+      field,
+      oldValue,
+      newValue,
+      timestamp: new Date().toISOString(),
+      user: "Usuário Atual",
+    }
+    setChangeLog((prev) => [change, ...prev].slice(0, 50))
+  }
+
+  // Salva propriedade
+  const handleSave = async () => {
+    setSaving(true)
+
+    try {
+      const propertyData = {
+        title,
+        description,
+        type,
+        address,
+        bedrooms: Number.parseInt(bedrooms) || 0,
+        bathrooms: Number.parseInt(bathrooms) || 0,
+        area: Number.parseFloat(area) || 0,
+        status,
+        images,
+        typologies,
+        developerName,
+        partnershipManager,
+      }
+
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(propertyData),
+      })
+
+      if (response.ok) {
+        // Limpa o rascunho
+        localStorage.removeItem("property-draft-new")
+        router.push("/properties")
+      } else {
+        throw new Error("Erro ao salvar propriedade")
+      }
+    } catch (error) {
+      console.error("Erro ao salvar:", error)
+      alert("Erro ao salvar propriedade. Tente novamente.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => router.push("/properties")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Novo Empreendimento</h1>
-            <p className="text-gray-600">Cadastre um novo empreendimento imobiliário</p>
-          </div>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Novo Imóvel</h1>
+          <p className="text-muted-foreground">Cadastre um novo empreendimento imobiliário</p>
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Status do Auto-save */}
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          {/* Indicador de auto-save */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {autoSaving ? (
               <>
                 <Clock className="h-4 w-4 animate-spin" />
@@ -322,43 +262,30 @@ export default function NewPropertyPage() {
               </>
             ) : lastSaved ? (
               <>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                Salvo às {formatDateTime(lastSaved)}
+                <Save className="h-4 w-4" />
+                Salvo {lastSaved.toLocaleTimeString()}
               </>
             ) : null}
           </div>
 
           <Button onClick={handleSave} disabled={saving || !title.trim()}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? "Salvando..." : "Salvar Empreendimento"}
+            {saving ? "Salvando..." : "Salvar Imóvel"}
           </Button>
         </div>
       </div>
 
-      {/* Alert de permissões */}
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Novos empreendimentos podem ser criados por qualquer usuário. Alterações futuras precisarão de aprovação de um
-          administrador ou gerente.
-        </AlertDescription>
-      </Alert>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna Principal */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Formulário Principal */}
+        <div className="lg:col-span-3 space-y-6">
           {/* Informações Básicas */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Home className="h-5 w-5" />
-                Informações Básicas
-              </CardTitle>
+              <CardTitle>Informações Básicas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">Nome do Empreendimento *</Label>
+                  <Label htmlFor="title">Título *</Label>
                   <Input
                     id="title"
                     value={title}
@@ -366,10 +293,11 @@ export default function NewPropertyPage() {
                       logChange("title", title, e.target.value)
                       setTitle(e.target.value)
                     }}
-                    placeholder="Ex: Residencial Vila Harmonia"
+                    placeholder="Ex: Residencial Vista Alegre"
                     required
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="type">Tipo *</Label>
                   <Select
@@ -383,48 +311,15 @@ export default function NewPropertyPage() {
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Empreendimento">Empreendimento</SelectItem>
-                      <SelectItem value="Apartamento">Apartamento</SelectItem>
-                      <SelectItem value="Casa">Casa</SelectItem>
-                      <SelectItem value="Comercial">Comercial</SelectItem>
+                      <SelectItem value="apartamento">Apartamento</SelectItem>
+                      <SelectItem value="casa">Casa</SelectItem>
+                      <SelectItem value="cobertura">Cobertura</SelectItem>
+                      <SelectItem value="terreno">Terreno</SelectItem>
+                      <SelectItem value="comercial">Comercial</SelectItem>
+                      <SelectItem value="empreendimento">Empreendimento</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={status}
-                    onValueChange={(value) => {
-                      logChange("status", status, value)
-                      setStatus(value)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Disponível">Disponível</SelectItem>
-                      <SelectItem value="Reservado">Reservado</SelectItem>
-                      <SelectItem value="Vendido">Vendido</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="address">Endereço</Label>
-                <Input
-                  id="address"
-                  value={address}
-                  onChange={(e) => {
-                    logChange("address", address, e.target.value)
-                    setAddress(e.target.value)
-                  }}
-                  placeholder="Endereço completo do empreendimento"
-                />
               </div>
 
               <div>
@@ -436,9 +331,103 @@ export default function NewPropertyPage() {
                     logChange("description", description, e.target.value)
                     setDescription(e.target.value)
                   }}
-                  placeholder="Descrição detalhada do empreendimento"
+                  placeholder="Descreva as características do imóvel..."
                   rows={4}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="address">Endereço</Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => {
+                    logChange("address", address, e.target.value)
+                    setAddress(e.target.value)
+                  }}
+                  placeholder="Endereço completo"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="bedrooms">Quartos</Label>
+                  <Input
+                    id="bedrooms"
+                    type="number"
+                    value={bedrooms}
+                    onChange={(e) => {
+                      logChange("bedrooms", bedrooms, e.target.value)
+                      setBedrooms(e.target.value)
+                    }}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="bathrooms">Banheiros</Label>
+                  <Input
+                    id="bathrooms"
+                    type="number"
+                    value={bathrooms}
+                    onChange={(e) => {
+                      logChange("bathrooms", bathrooms, e.target.value)
+                      setBathrooms(e.target.value)
+                    }}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="area">Área (m²)</Label>
+                  <Input
+                    id="area"
+                    type="number"
+                    step="0.01"
+                    value={area}
+                    onChange={(e) => {
+                      logChange("area", area, e.target.value)
+                      setArea(e.target.value)
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Construtora */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Construtora</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="developer">Nome da Construtora</Label>
+                  <Input
+                    id="developer"
+                    value={developerName}
+                    onChange={(e) => {
+                      logChange("developerName", developerName, e.target.value)
+                      setDeveloperName(e.target.value)
+                    }}
+                    placeholder="Ex: Construtora ABC"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="manager">Gerente de Parceria</Label>
+                  <Input
+                    id="manager"
+                    value={partnershipManager}
+                    onChange={(e) => {
+                      logChange("partnershipManager", partnershipManager, e.target.value)
+                      setPartnershipManager(e.target.value)
+                    }}
+                    placeholder="Nome do responsável"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -454,339 +443,147 @@ export default function NewPropertyPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {typologies.map((typology, index) => (
-                  <Card key={typology.id} className="p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium">Tipologia {index + 1}</h4>
-                      <Button variant="outline" size="sm" onClick={() => removeTypology(typology.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Nome da Tipologia</Label>
-                        <Input
-                          value={typology.name}
-                          onChange={(e) => updateTypology(typology.id, "name", e.target.value)}
-                          placeholder="Ex: Apartamento 2 quartos"
-                        />
-                      </div>
-                      <div>
-                        <Label>Preço</Label>
-                        <div className="relative">
-                          <DollarSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            type="number"
-                            value={typology.price}
-                            onChange={(e) => updateTypology(typology.id, "price", Number(e.target.value))}
-                            placeholder="650000"
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                      <div>
-                        <Label>Área (m²)</Label>
-                        <div className="relative">
-                          <Square className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            type="number"
-                            value={typology.area}
-                            onChange={(e) => updateTypology(typology.id, "area", Number(e.target.value))}
-                            placeholder="65"
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Quartos</Label>
-                        <div className="relative">
-                          <Bed className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            type="number"
-                            value={typology.bedrooms}
-                            onChange={(e) => updateTypology(typology.id, "bedrooms", Number(e.target.value))}
-                            placeholder="2"
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Banheiros</Label>
-                        <div className="relative">
-                          <Bath className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            type="number"
-                            value={typology.bathrooms}
-                            onChange={(e) => updateTypology(typology.id, "bathrooms", Number(e.target.value))}
-                            placeholder="2"
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Vagas</Label>
-                        <div className="relative">
-                          <Car className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <Input
-                            type="number"
-                            value={typology.parking_spaces}
-                            onChange={(e) => updateTypology(typology.id, "parking_spaces", Number(e.target.value))}
-                            placeholder="1"
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {typology.price > 0 && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        Preço: {formatCurrency(typology.price)}
-                        {typology.area && typology.area > 0 && (
-                          <span> • {formatCurrency(typology.price / typology.area)}/m²</span>
-                        )}
-                      </div>
-                    )}
-                  </Card>
-                ))}
-
-                {typologies.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Home className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Nenhuma tipologia cadastrada</p>
-                    <p className="text-sm">Clique em "Adicionar Tipologia" para começar</p>
+            <CardContent className="space-y-4">
+              {typologies.map((typology, index) => (
+                <div key={typology.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium">Tipologia {index + 1}</h4>
+                    <Button variant="outline" size="sm" onClick={() => removeTypology(typology.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Características */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Características do Empreendimento</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  value={newFeature}
-                  onChange={(e) => setNewFeature(e.target.value)}
-                  placeholder="Digite uma característica"
-                  onKeyPress={(e) => e.key === "Enter" && addFeature()}
-                />
-                <Button onClick={addFeature}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Nome da Tipologia</Label>
+                      <Input
+                        value={typology.name}
+                        onChange={(e) => updateTypology(typology.id, "name", e.target.value)}
+                        placeholder="Ex: 2 Quartos"
+                      />
+                    </div>
 
-              <div className="flex flex-wrap gap-2">
-                {features.map((feature, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {feature}
-                    <button onClick={() => removeFeature(feature)} className="ml-1 hover:text-red-500">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
+                    <div>
+                      <Label>Valor (R$)</Label>
+                      <Input
+                        type="number"
+                        value={typology.value}
+                        onChange={(e) => updateTypology(typology.id, "value", Number.parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
 
-              {features.length === 0 && <p className="text-gray-500 text-sm">Nenhuma característica adicionada</p>}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Construtora */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Construtora
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="developerName">Nome da Construtora</Label>
-                <Input
-                  id="developerName"
-                  value={developerName}
-                  onChange={(e) => {
-                    logChange("developer.name", developerName, e.target.value)
-                    setDeveloperName(e.target.value)
-                  }}
-                  placeholder="Ex: Construtora Harmonia Ltda"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="partnershipManager">Gerente de Parcerias</Label>
-                <Input
-                  id="partnershipManager"
-                  value={partnershipManager}
-                  onChange={(e) => {
-                    logChange("developer.partnership_manager", partnershipManager, e.target.value)
-                    setPartnershipManager(e.target.value)
-                  }}
-                  placeholder="Nome do gerente responsável"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="developerPhone">Telefone</Label>
-                <Input
-                  id="developerPhone"
-                  value={developerPhone}
-                  onChange={(e) => {
-                    logChange("developer.phone", developerPhone, e.target.value)
-                    setDeveloperPhone(e.target.value)
-                  }}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="developerEmail">E-mail</Label>
-                <Input
-                  id="developerEmail"
-                  type="email"
-                  value={developerEmail}
-                  onChange={(e) => {
-                    logChange("developer.email", developerEmail, e.target.value)
-                    setDeveloperEmail(e.target.value)
-                  }}
-                  placeholder="contato@construtora.com.br"
-                />
-              </div>
+              {typologies.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Nenhuma tipologia adicionada</p>
+                  <p className="text-sm">Clique em "Adicionar Tipologia" para começar</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Upload de Imagens */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ImageIcon className="h-5 w-5" />
-                Imagens
-              </CardTitle>
+              <CardTitle>Imagens</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="relative">
-                  <input
+                <div>
+                  <Label htmlFor="images">Upload de Imagens</Label>
+                  <Input
+                    id="images"
                     type="file"
                     multiple
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     disabled={uploadingImages}
                   />
-                  <Button variant="outline" className="w-full bg-transparent" disabled={uploadingImages}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploadingImages ? "Enviando..." : "Adicionar Imagens"}
-                  </Button>
+                  {uploadingImages && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      <Upload className="h-4 w-4 inline mr-2" />
+                      Fazendo upload das imagens...
+                    </p>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image || "/placeholder.svg"}
-                        alt={`Imagem ${index + 1}`}
-                        className="w-full h-20 object-cover rounded border"
-                      />
-                      <button
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {images.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center py-4">Nenhuma imagem adicionada</p>
+                {images.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {images.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={image || "/placeholder.svg"}
+                          alt={`Imagem ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Resumo */}
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Status */}
           <Card>
             <CardHeader>
-              <CardTitle>Resumo</CardTitle>
+              <CardTitle>Status</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600">Total de Tipologias</p>
-                <p className="text-2xl font-bold text-primary">{typologies.length}</p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <p className="text-sm text-gray-600">Faixa de Preços</p>
-                {typologies.length > 0 && typologies.some((t) => t.price > 0) ? (
-                  <div className="mt-1">
-                    <p className="text-sm text-gray-700">
-                      De {formatCurrency(Math.min(...typologies.filter((t) => t.price > 0).map((t) => t.price)))}
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      Até {formatCurrency(Math.max(...typologies.filter((t) => t.price > 0).map((t) => t.price)))}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">Nenhum preço definido</p>
-                )}
-              </div>
-
-              <Separator />
-
-              <div>
-                <p className="text-sm text-gray-600">Características</p>
-                <p className="text-2xl font-bold text-green-600">{features.length}</p>
-              </div>
-
-              <Separator />
-
-              <div>
-                <p className="text-sm text-gray-600">Imagens</p>
-                <p className="text-2xl font-bold text-blue-600">{images.length}</p>
-              </div>
+            <CardContent>
+              <Select
+                value={status}
+                onValueChange={(value) => {
+                  logChange("status", status, value)
+                  setStatus(value)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="available">Disponível</SelectItem>
+                  <SelectItem value="sold">Vendido</SelectItem>
+                  <SelectItem value="reserved">Reservado</SelectItem>
+                  <SelectItem value="construction">Em Construção</SelectItem>
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
 
           {/* Histórico de Alterações */}
-          {changeLog.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Histórico de Alterações
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {changeLog.slice(0, 10).map((change) => (
-                    <div key={change.id} className="text-xs p-2 bg-gray-50 rounded">
-                      <p className="font-medium">{change.field}</p>
-                      <p className="text-gray-600">
-                        {new Date(change.timestamp).toLocaleTimeString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Alterações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {changeLog.length > 0 ? (
+                  changeLog.map((change) => (
+                    <div key={change.id} className="text-sm border-l-2 border-blue-200 pl-3 py-2">
+                      <div className="font-medium">{change.field}</div>
+                      <div className="text-muted-foreground text-xs">{new Date(change.timestamp).toLocaleString()}</div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma alteração registrada</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
